@@ -35,6 +35,9 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - secretsharing
+    - numtype-dk
+    - type-level
+    - random
 
 tests:
   secretsharing-test:

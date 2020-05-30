@@ -1,11 +1,18 @@
+{-# LANGUAGE KindSignatures #-}      -- for (n :: Nat) declaration
+{-# LANGUAGE DataKinds #-}           -- for Nat (lifting integer to type)
+{-# LANGUAGE RankNTypes #-}          -- for forall
+{-# LANGUAGE ScopedTypeVariables #-} -- when type signature is used inside a fn with a top level forall, we need this for scoping
+
 module Field where
 
 import qualified Prelude as P
 import Prelude(($), (!!), (++), (.), Int, Show, iterate, mod, quotRem, snd)
-
 import Data.Eq
+import qualified GHC.TypeLits as TL
+import Data.Proxy (Proxy(..))
+import Data.TypeLevel hiding ((+), (-), (*), (/), Mod, mod)
 
-class Eq a => Field a where
+class Field a where
   zero :: a
   one  :: a
   (-)  :: a -> a -> a
@@ -17,21 +24,28 @@ class FField a where
     fromInteger :: Int -> a
     size        :: a   -> Int
 
-base :: Int
-base = 7919
+newtype Modp (n :: TL.Nat) = Modp Int deriving (Show)
 
-newtype Modp = Modp Int deriving (Show, Eq)
-instance Field Modp where
-  zero = Modp 0
-  one  = Modp 1
-  (+) (Modp x) (Modp y) = Modp $ mod (x P.+ y) base
-  (-) (Modp x) (Modp y) = Modp $ mod (x P.- y) base
-  (*) (Modp x) (Modp y) = Modp $ mod (x P.* y) base
-  (/) (Modp x) (Modp y) = Modp $ mod (x P.* snd (extendedEu base y)) base
+toMod :: forall n . ( TL.KnownNat n) => Int -> Modp n
+toMod i = Modp P.$ i `P.mod` (P.fromInteger P.$ TL.natVal (Proxy :: Proxy n))
 
-instance FField Modp where
-    fromInteger x = Modp $ mod x base
-    size        x = base
+unMod :: Modp n -> Int
+unMod (Modp i) = i
+
+getBase :: TL.KnownNat n => Modp n -> Int
+getBase base@(Modp s) = P.fromIntegral P.$ TL.natVal base
+
+instance forall n.(TL.KnownNat n) => Field (Modp n) where
+  zero    = toMod 0 :: Modp n
+  one     = toMod 1 :: Modp n
+  (+) x y =  toMod ((unMod x) P.+ (unMod y)) :: Modp n
+  (-) x y =  toMod ((unMod x) P.- (unMod y)) :: Modp n
+  (*) x y =  toMod ((unMod x) P.* (unMod y)) :: Modp n
+  (/) x y =  toMod ((unMod x) P.* snd (extendedEu (getBase x) (unMod y)) ) :: Modp n
+
+instance forall n.(TL.KnownNat n) => FField (Modp n) where
+    fromInteger x = toMod x :: Modp n
+    size        x = getBase x
 
 extendedEu :: Int -> Int -> (Int, Int)
 extendedEu a 0 = (1, 0)
