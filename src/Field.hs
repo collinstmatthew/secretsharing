@@ -12,7 +12,8 @@ import qualified GHC.TypeLits as TL
 import Data.Proxy (Proxy(..))
 import Data.TypeLevel hiding ((+), (-), (*), (/), Mod, mod)
 
-class Field a where
+-- Must be able to compareelementsofa field
+class Data.Eq.Eq a => Field a where
   zero :: a
   one  :: a
   (-)  :: a -> a -> a
@@ -35,6 +36,10 @@ unMod (Modp i) = i
 getBase :: TL.KnownNat n => Modp n -> Int
 getBase base@(Modp s) = P.fromIntegral P.$ TL.natVal base
 
+
+instance forall n.(TL.KnownNat n) =>  Data.Eq.Eq (Modp n) where
+  x == y = unMod (x :: Modp n) Data.Eq.== unMod (y :: Modp n)
+
 instance forall n.(TL.KnownNat n) => Field (Modp n) where
   zero    = toMod 0 :: Modp n
   one     = toMod 1 :: Modp n
@@ -56,4 +61,4 @@ extendedEu a b = (t, s P.- q P.* t) where
 -- Computes x to the power of n for a field
 power :: Field a => a -> Int -> a
 power x 0 = one
-power x n = iterate (x *) x !! (n P.- 1)
+power x n = iterate (x*) x !! (n P.- (1 :: Int))
