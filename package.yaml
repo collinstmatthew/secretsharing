@@ -38,6 +38,7 @@ executables:
     - numtype-dk
     - type-level
     - random
+    - matrix
     - primes
 
 tests:

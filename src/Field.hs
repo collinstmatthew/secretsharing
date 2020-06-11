@@ -28,7 +28,7 @@ class FField a where
 newtype Modp (n :: TL.Nat) = Modp Int deriving (Show)
 
 toMod :: forall n . ( TL.KnownNat n) => Int -> Modp n
-toMod i = Modp P.$ i `P.mod` (P.fromInteger P.$ TL.natVal (Proxy :: Proxy n))
+toMod i = Modp P.$ i `mod` P.fromInteger (TL.natVal (Proxy :: Proxy n))
 
 unMod :: Modp n -> Int
 unMod (Modp i) = i
@@ -43,14 +43,16 @@ instance forall n.(TL.KnownNat n) =>  Data.Eq.Eq (Modp n) where
 instance forall n.(TL.KnownNat n) => Field (Modp n) where
   zero    = toMod 0 :: Modp n
   one     = toMod 1 :: Modp n
-  (+) x y =  toMod ((unMod x) P.+ (unMod y)) :: Modp n
-  (-) x y =  toMod ((unMod x) P.- (unMod y)) :: Modp n
-  (*) x y =  toMod ((unMod x) P.* (unMod y)) :: Modp n
-  (/) x y =  toMod ((unMod x) P.* snd (extendedEu (getBase x) (unMod y)) ) :: Modp n
+  (+) x y =  toMod (unMod x P.+ unMod y) :: Modp n
+  (-) x y =  toMod (unMod x P.- unMod y) :: Modp n
+  (*) x y =  toMod (unMod x P.* unMod y) :: Modp n
+  (/) x y =  toMod (unMod x P.* snd (extendedEu (getBase x) (unMod y)) ) :: Modp n
 
 instance forall n.(TL.KnownNat n) => FField (Modp n) where
     fromInteger x = toMod x :: Modp n
-    size        x = getBase x
+    size          = getBase
+
+
 
 extendedEu :: Int -> Int -> (Int, Int)
 extendedEu a 0 = (1, 0)
