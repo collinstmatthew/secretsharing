@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}           -- for Nat (lifting integer to type)
+
 --https://crypto.stackexchange.com/questions/8240/implementing-secret-reconstruction-in-shamirs-secret-sharing/8262#8262
 
 --https://rkrishnan.org/posts/2017-06-20-typesafe-modulus-in-haskell.html
@@ -20,6 +22,7 @@ import Prelude as P
 
 main :: IO()
 main = do
+
   let p = fromList 3 3 [2,-1,0,-1,2,-1,0,-1,2]
   --let p = fromList 2 2 [2,-1,-1,2]
   --print $ lumDecomp p
@@ -34,7 +37,20 @@ main = do
   let (l,u,perm) = lumDecompPerm p
   print $ lumDecompPerm p
   print $ multStd perm p == multStd l u
---  print $ mydet (l,u,perm)
+  print $ multStd perm p
+  print $ multStd l u
+
+
+
+  let m1 = fromList 2 2 [toMod 2 :: Modp 4483, toMod 4 :: Modp 4483, toMod 5 :: Modp 4483,  toMod 7 :: Modp 4483]
+
+  let m2 = fromList 2 1 [toMod 1 :: Modp 4483, toMod 2 :: Modp 4483  ]
+
+
+--  print 12
+  --print p3
+--  let (l1,u1) = lumDecomp m1
+
 
   let mysecret = 13293
   let v = Vault {threshold = 2, shares = 2, secret = mysecret}
