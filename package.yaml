@@ -40,6 +40,7 @@ executables:
     - random
     - matrix
     - primes
+    - vector
 
 tests:
   secretsharing-test:

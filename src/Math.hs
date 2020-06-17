@@ -10,6 +10,8 @@ import Data.Maybe(fromJust)
 import Data.List(findIndex)
 import qualified Prelude as P
 
+import qualified Data.Vector as V
+
 import qualified Field as F
 
 -- should actually probably creat a show instance for this
@@ -26,40 +28,46 @@ import qualified Field as F
 -- one to use
 --instance Field a => P.Num (M.Matrix (a))
 
+--https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm
+
+fMult :: F.Field b => M.Matrix b -> b -> M.Matrix b
+fMult m x = M.mapPos (\(r,c) a -> a F.* x) m
+
+-- helper function to get the size of the matrix
 -- minus two matricies fromeacch other
 matMinus :: F.Field a => M.Matrix a -> M.Matrix a -> M.Matrix a
-matMinus m1 m2 = M.elementwise (\x y -> x F.- y) m1 m2
+matMinus = M.elementwise (F.-)
 
 matPlus :: F.Field a => M.Matrix a -> M.Matrix a -> M.Matrix a
-matPlus m1 m2 = M.elementwise (\x y -> x F.+ y) m1 m2
+matPlus = M.elementwise (F.+)
 
 matMult :: F.Field a => M.Matrix a -> M.Matrix a -> M.Matrix a
 matMult m1 m2
-  | allSame = M.fromList 1 1 [(M.getElem 1 1 m1) F.* (M.getElem 1 1 m2)]
-  | maxVal == n  = (matMult aTop m2) M.<-> (matMult aBottom m2)
-  | maxVal == p  = (matMult m1 bLeft) M.<|> (matMult m1 bRight)
-  | maxVal == m  = (matMult aLeft bTop) `matPlus` (matMult aRight bBottom)
+  | allSame = M.fromList 1 1 [M.getElem 1 1 m1 F.* M.getElem 1 1 m2]
+  | maxVal == n  = matMult aTop m2     M.<->    matMult aBottom m2
+  | maxVal == p  = matMult m1 bLeft    M.<|>    matMult m1 bRight
+  | maxVal == m  = matMult aLeft bTop `matPlus` matMult aRight bBottom
       where (aTop,aBottom) = splitHor m1
-			(aLeft,aRight) = splitVert m1
-			(bLeft,bRight) = splitVert m2
-			(bTop,bBottom) = splitHor m2
-            maxVal        = n `P.max` m `P.max` p
-            n             = M.nrows m1
-            m             = M.ncols m1
-            p             = M.ncols m2
-            allSame       = n == m P.&& n == p P.&& n == 1
+            (aLeft,aRight) = splitVert m1
+            (bLeft,bRight) = splitVert m2
+            (bTop,bBottom) = splitHor m2
+            maxVal         = n `P.max` m `P.max` p
+            n              = M.nrows m1
+            m              = M.ncols m1
+            p              = M.ncols m2
+            allSame        = n == m P.&& n == p P.&& n == 1
 
 splitVert :: M.Matrix a -> (M.Matrix a, M.Matrix a)
 splitVert m
   | M.nrows m == 1 = (a1,a2)
   | P.otherwise = ( a1 M.<-> a3 , a2 M.<-> a4 )  where
-      (a1,a2,a3,a4) = (M.splitBlocks 1 1 m)
+      (a1,a2,a3,a4) = M.splitBlocks 1 1 m
 
 splitHor :: M.Matrix a -> (M.Matrix a, M.Matrix a)
 splitHor m
   | M.ncols m == 1 = (a1,a3)
   | P.otherwise = ( a1 M.<|> a2 , a3 M.<|> a4 )  where
-      (a1,a2,a3,a4) = (M.splitBlocks 1 1 m)
+      (a1,a2,a3,a4) = M.splitBlocks 1 1 m
 
 --luDecomp :: Field a => Matrix a -> (Matrix a,Matrix a)
 --the Num is neccesry for the 1
@@ -80,34 +88,31 @@ identity n = M.matrix n n $ \(i,j) -> if i == j then F.one else F.zero
 zeroMat :: F.Field a => Int -> Int -> M.Matrix a
 zeroMat n1 n2 = M.matrix n1 n2 $ \(i,j) ->  F.zero
 
-
+-- to get this working just replace [1] with identity and also the permulation matrix working with a Field
 -- in format L,U,P
-lumDecompPerm :: (P.Fractional a, P.Num a, Eq a) =>  M.Matrix a -> (M.Matrix a, M.Matrix a, M.Matrix a)
+lumDecompPerm :: F.Field a =>  M.Matrix a -> (M.Matrix a, M.Matrix a, M.Matrix a)
 lumDecompPerm m
-    |  M.nrows m == 1       = (m, M.fromList 1 1 [1], M.fromList 1 1 [1])
-    |  M.getElem 1 1 m == 0 = (\((x1,x2),x3)->(x1,x2,x3)) (calc ((perm m) P.*m), perm m)
-    |  P.otherwise          = (\((x1,x2),x3)->(x1,x2,x3)) (calc m, M.identity (M.nrows m))
+    |  M.nrows m == 1            = (m, identity 1, identity 1)
+    |  M.getElem 1 1 m == F.zero = (\((x1,x2),x3)->(x1,x2,x3)) (calc (matMult (perm m) m), perm m)
+    |  P.otherwise               = (\((x1,x2),x3)->(x1,x2,x3)) (calc m, identity (M.nrows m))
 
-perm :: (Eq a1, P.Num a2, P.Num a1) => M.Matrix a1 -> M.Matrix a2
-perm x = M.permMatrix (M.nrows x) 1 (fromJust (findIndex (/= 0) extNum) P.+1) where
+perm :: F.Field a  => M.Matrix a -> M.Matrix a
+perm x = P.fmap (\x -> if x == 0 then F.zero else F.one)  permRes where
     extNum = M.toList $ M.colVector (M.getCol 1 x)
+    permRes = M.permMatrix (M.nrows x) 1 (fromJust (findIndex (/= F.zero) extNum) P.+1)
 
-calc :: (P.Fractional a, Eq a) => M.Matrix a -> (M.Matrix a, M.Matrix a)
-calc x = (M.joinBlocks (1, zeroes, p' P.* sMult v (1 P./ M.getElem 1 1 a11), l'), M.joinBlocks (a11, wT, M.transpose zeroes, u')) where
+calc :: F.Field a => M.Matrix a -> (M.Matrix a, M.Matrix a)
+calc x = (M.joinBlocks (identity 1, zeroes, p' `matMult` fMult v (F.one F./ M.getElem 1 1 a11), l'), M.joinBlocks (a11, wT, M.transpose zeroes, u')) where
     (a11,wT,v,a')    = M.splitBlocks 1 1 x
-    (l',u',p')       = lumDecompPerm (a' P.-v P.* sMult wT (1 P./ M.getElem 1 1 a11) )
-    zeroes           = M.zero 1 (M.ncols a')
+    (l',u',p')       = lumDecompPerm (a' `matMinus` (v `matMult` fMult wT (F.one F./ M.getElem 1 1 a11) ))
+    zeroes           = zeroMat 1 (M.ncols a')
 
+--counts the number of permutations a permutation matrix described
+countPerm :: F.Field a => M.Matrix a -> Int
+countPerm m = (M.nrows m P.-nonzero) `P.div` 2 where
+    nonzero = V.length (V.filter (== F.one) (M.getDiag m))
 
-sMult :: P.Num b => M.Matrix b -> b -> M.Matrix b
-sMult m x = M.mapPos (\(r,c) a -> a P.* x) m
-
-fMult :: F.Field b => M.Matrix b -> b -> M.Matrix b
-fMult m x = M.mapPos (\(r,c) a -> a F.* x) m
--- helper function to get the size of the matrix
-
-
---mydet :: Num a => (Matrix a, Matrix a, c) -> a
---mydet (x,y,z) = (diagProd x)*(diagProd y)*(-1.0) P.**s where
---    s = ((nrows z)-(trace z)) / 2
-
+myDet :: F.Field a => M.Matrix a -> a
+myDet m = diagProd l F.* diagProd u F.* F.power (F.zero F.- F.one) (countPerm p) where
+  (l,u,p)    = lumDecompPerm m
+  diagProd x = P.foldl (F.*) F.one (M.toList (M.rowVector (M.getDiag x)))
