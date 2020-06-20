@@ -23,36 +23,26 @@ class Data.Eq.Eq a => Field a where
 
 class FField a where
     fromInteger :: Int -> a
+    toInteger   :: a   -> Int
     size        :: a   -> Int
 
 newtype Modp (n :: TL.Nat) = Modp Int deriving (Show)
 
-toMod :: forall n . ( TL.KnownNat n) => Int -> Modp n
-toMod i = Modp P.$ i `mod` P.fromInteger (TL.natVal (Proxy :: Proxy n))
-
-unMod :: Modp n -> Int
-unMod (Modp i) = i
-
-getBase :: TL.KnownNat n => Modp n -> Int
-getBase base@(Modp s) = P.fromIntegral P.$ TL.natVal base
-
-
 instance forall n.(TL.KnownNat n) =>  Data.Eq.Eq (Modp n) where
-  x == y = unMod (x :: Modp n) Data.Eq.== unMod (y :: Modp n)
+  x == y = toInteger (x :: Modp n) Data.Eq.== toInteger (y :: Modp n)
 
 instance forall n.(TL.KnownNat n) => Field (Modp n) where
-  zero    = toMod 0 :: Modp n
-  one     = toMod 1 :: Modp n
-  (+) x y =  toMod (unMod x P.+ unMod y) :: Modp n
-  (-) x y =  toMod (unMod x P.- unMod y) :: Modp n
-  (*) x y =  toMod (unMod x P.* unMod y) :: Modp n
-  (/) x y =  toMod (unMod x P.* snd (extendedEu (getBase x) (unMod y)) ) :: Modp n
+  zero    = fromInteger 0 :: Modp n
+  one     = fromInteger 1 :: Modp n
+  (+) x y = fromInteger (toInteger x P.+ toInteger y) :: Modp n
+  (-) x y = fromInteger (toInteger x P.- toInteger y) :: Modp n
+  (*) x y = fromInteger (toInteger x P.* toInteger y) :: Modp n
+  (/) x y = fromInteger (toInteger x P.* snd (extendedEu (size x) (toInteger y)) ) :: Modp n
 
 instance forall n.(TL.KnownNat n) => FField (Modp n) where
-    fromInteger x = toMod x :: Modp n
-    size          = getBase
-
-
+    fromInteger x      = Modp P.$ x `mod` P.fromInteger (TL.natVal (Proxy :: Proxy n))
+    toInteger (Modp i) = i
+    size base@(Modp s) = P.fromIntegral P.$ TL.natVal base
 
 extendedEu :: Int -> Int -> (Int, Int)
 extendedEu a 0 = (1, 0)

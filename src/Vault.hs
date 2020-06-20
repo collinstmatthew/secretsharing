@@ -8,7 +8,7 @@ module Vault where
 import qualified Data.Char as C
 
 import Polynomial
-import Field
+import Field as F
 import qualified Prelude      as P
 import qualified GHC.TypeLits as TL
 import System.Random(Random,randomRs,newStdGen)
@@ -51,7 +51,7 @@ nextPrime n | isPrime n = n   -- don't need to compare to True here
 
 generateShare :: Vault [C.Char] -> IO [Share [(Int, Int)]]
 generateShare vault@(Vault threshold shares secret') = do
-         let Just someNat = TL.someNatVal (toInteger (ffOrder vault))
+         let Just someNat = TL.someNatVal (P.toInteger (ffOrder vault))
 
          case someNat of
              TL.SomeNat (_ :: Proxy n1) -> do
@@ -69,7 +69,7 @@ generateShare vault@(Vault threshold shares secret') = do
                      xvals      = take (shares P.* sSize) (nub randoml')
                      polynomial = Polynomial (secret P.++ take (threshold P.* sSize P.-sSize) randoml')
 
-                 let points :: [(Int,Int)] = zip (map unMod xvals) (map (unMod . evaluate polynomial) xvals)
+                 let points :: [(Int,Int)] = zip (map F.toInteger xvals) (map (F.toInteger . evaluate polynomial) xvals)
                  return $ inShare points (ffOrder vault) sSize
 
 decrypt :: P.Monad m => [Share [(Int, Int)]] -> m [C.Char]
@@ -77,10 +77,10 @@ decrypt shares = do
          -- size of the secret
          let sSize = P.length $ info (shares!!0)
          -- do a check to ensure they all have the same order
-         let Just someNat = TL.someNatVal (toInteger (order (head shares)))
+         let Just someNat = TL.someNatVal (P.toInteger (order (head shares)))
          case someNat of
              TL.SomeNat (_ :: Proxy n1) -> do
                  -- do stuff here with the computation
-                 let x :: [Modp n1] = map (toMod . P.fst) $ concat $ map info shares
-                 let y :: [Modp n1] = map (toMod . P.snd) $ concat $ map info shares
-                 return P.$ map (\z -> (C.chr (unMod (coeff z x y)))) [1..sSize]
+                 let x :: [Modp n1] = map (fromInteger . P.fst) $ concat $ map info shares
+                 let y :: [Modp n1] = map (fromInteger . P.snd) $ concat $ map info shares
+                 return P.$ map (\z -> (C.chr (F.toInteger (coeff z x y)))) [1..sSize]
