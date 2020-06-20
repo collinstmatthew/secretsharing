@@ -73,4 +73,4 @@ decrypt shares = do
                  --let x = Modp secret' :: Modp n1
                  let x = map (toMod . P.fst . info) shares :: [Modp n1]
                  let y = map (toMod . P.snd . info) shares :: [Modp n1]
-                 return P.$ unMod (s0 x y)
+                 return P.$ unMod (coeff 1 x y)

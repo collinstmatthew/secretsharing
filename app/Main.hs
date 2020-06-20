@@ -40,19 +40,16 @@ main = do
   --print $ multStd perm p
   --print $ multStd l u
 
-
-
   let m1 = fromList 2 2 [toMod 5 :: Modp 4483, toMod 5 :: Modp 4483, toMod 1 :: Modp 4483,  toMod 5 :: Modp 4483]
 
   let m2 = fromList 2 1 [toMod 1 :: Modp 4483, toMod 2 :: Modp 4483  ]
-
 
 --  print 12
   print $ myDet m1
 --  let (l1,u1) = lumDecomp m1
 
 
-  let mysecret = 13293
+  let mysecret = 1898776
   let v = Vault {threshold = 2, shares = 2, secret = mysecret}
 
   --create order fuction which operates on Vault and gets the next prime number after mysecret
