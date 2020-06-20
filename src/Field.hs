@@ -26,23 +26,23 @@ class FField a where
     toInteger   :: a   -> Int
     size        :: a   -> Int
 
-newtype Modp (n :: TL.Nat) = Modp Int deriving (Show)
+newtype Modp (n :: TL.Nat) = Modpt Int deriving (Show)
 
 instance forall n.(TL.KnownNat n) =>  Data.Eq.Eq (Modp n) where
-  x == y = toInteger (x :: Modp n) Data.Eq.== toInteger (y :: Modp n)
+  x == y = toInteger x  Data.Eq.== toInteger y
 
 instance forall n.(TL.KnownNat n) => Field (Modp n) where
-  zero    = fromInteger 0 :: Modp n
-  one     = fromInteger 1 :: Modp n
-  (+) x y = fromInteger (toInteger x P.+ toInteger y) :: Modp n
-  (-) x y = fromInteger (toInteger x P.- toInteger y) :: Modp n
-  (*) x y = fromInteger (toInteger x P.* toInteger y) :: Modp n
-  (/) x y = fromInteger (toInteger x P.* snd (extendedEu (size x) (toInteger y)) ) :: Modp n
+  zero    = fromInteger 0
+  one     = fromInteger 1
+  (+) x y = fromInteger (toInteger x P.+ toInteger y)
+  (-) x y = fromInteger (toInteger x P.- toInteger y)
+  (*) x y = fromInteger (toInteger x P.* toInteger y)
+  (/) x y = fromInteger (toInteger x P.* snd (extendedEu (size x) (toInteger y)) )
 
 instance forall n.(TL.KnownNat n) => FField (Modp n) where
-    fromInteger x      = Modp P.$ x `mod` P.fromInteger (TL.natVal (Proxy :: Proxy n))
-    toInteger (Modp i) = i
-    size base@(Modp s) = P.fromIntegral P.$ TL.natVal base
+    fromInteger x      = Modpt P.$ x `mod` P.fromInteger (TL.natVal (Proxy :: Proxy n))
+    toInteger (Modpt i) = i
+    size base@(Modpt s) = P.fromIntegral P.$ TL.natVal base
 
 extendedEu :: Int -> Int -> (Int, Int)
 extendedEu a 0 = (1, 0)

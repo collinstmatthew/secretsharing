@@ -35,9 +35,8 @@ randomlist :: Random a => a -> a -> P.IO [a]
 randomlist a b = randomRs (a, b) P.<$> newStdGen
 
 --gets the order of the random field used dependent on the secret
---need to change this otherwise obviously could find out secret just from order of FF
+--just constant for now could change in the future
 ffOrder :: Vault [C.Char] -> P.Int
---ffOrder (Vault threshold shares secret') = nextPrime $ max ((map C.ord secret')!!0) shares
 ffOrder (Vault threshold shares secret') = 7919
 
 nextPrime :: P.Int -> P.Int
@@ -52,19 +51,17 @@ generateShare vault@(Vault threshold shares secret') = do
              TL.SomeNat (_ :: Proxy n1) -> do
                  -- convert char to a number
                  let secretInt   = P.map C.ord secret'
-                 --let secret = Modp (C.digitToInt secret') :: Modp n1
-                 let secret = P.map F.Modp secretInt :: [ F.Modp n1]
+                     secret      = P.map F.fromInteger secretInt :: [ F.Modp n1]
+                     sSize       = P.length secret'
 
-                 let sSize = P.length secret'
                  randoml <- randomlist 1 (ffOrder vault)
                  -- This vector can't have any duplicates otherwise the algorithm will fail
                  let randoml'   = P.map F.fromInteger randoml
-                     -- this should be take unique
-                     -- nub removes duplicate elements from a list
                      xvals      = P.take (shares P.* sSize) (nub randoml')
                      polynomial = Polynomial (secret P.++ P.take (threshold P.* sSize P.-sSize) randoml')
 
-                 let points :: [(P.Int, P.Int)] = P.zip (P.map F.toInteger xvals) (P.map (F.toInteger P.. evaluate polynomial) xvals)
+                 let points = P.zip (P.map F.toInteger xvals) (P.map (F.toInteger P.. evaluate polynomial) xvals)
+
                  P.return P.$ inShare points (ffOrder vault) sSize
 
 decrypt :: P.Monad m => [Share [(P.Int, P.Int)]] -> m [C.Char]
@@ -76,6 +73,6 @@ decrypt shares = do
          case someNat of
              TL.SomeNat (_ :: Proxy n1) -> do
                  -- do stuff here with the computation
-                 let x :: [F.Modp n1] = P.map (F.fromInteger P.. P.fst) P.$ P.concat P.$ P.map info shares
+                 let x  = P.map (F.fromInteger P.. P.fst) P.$ P.concat P.$ P.map info shares
                  let y :: [F.Modp n1] = P.map (F.fromInteger P.. P.snd) P.$ P.concat P.$ P.map info shares
                  P.return P.$ P.map (\z -> (C.chr (F.toInteger (coeff z x y)))) [1..sSize]
