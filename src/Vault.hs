@@ -5,6 +5,7 @@
 
 module Vault where
 
+import Debug.Trace
 import Polynomial
 import Field
 import qualified Prelude      as P
@@ -58,7 +59,7 @@ generateShare vault@(Vault threshold shares secret') = do
                      -- this should be take unique
                      -- nub removes duplicate elements from a list
                      xvals      = take shares (nub randoml')
-                     polynomial = Polynomial (secret : take (threshold P.-1) randoml')
+                     polynomial = traceShow (secret : take (threshold P.-1) randoml') $ Polynomial (secret : take (threshold P.-1) randoml')
 
                  let points :: [(Int,Int)] = zip (map unMod xvals) (map (unMod . evaluate polynomial) xvals)
                  return $ inShare points (ffOrder vault)
