@@ -22,7 +22,7 @@ import Prelude as P
 
 main :: IO()
 main = do
-  let mysecret = 1898
+  let mysecret = 'z' :: Char
   let v = Vault {threshold = 2, shares = 2, secret = mysecret}
 
   [s1,s2] <- generateShare v
