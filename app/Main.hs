@@ -22,12 +22,12 @@ import Prelude as P
 
 main :: IO()
 main = do
-  let mysecret = 'z' :: Char
-  let v = Vault {threshold = 2, shares = 2, secret = mysecret}
+  --let mysecret = ['c'] :: [Char]
+  let mysecret = "hey" :: [Char]
+  let v = Vault {threshold = 2, shares = 3, secret = mysecret}
 
-  [s1,s2] <- generateShare v
-
+  [s1,s2,s3] <- generateShare v
   result <- decrypt [s1,s2]
 
-  --print "results"
+ -- print "results"
   print result
