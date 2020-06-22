@@ -8,7 +8,7 @@ module Vault where
 import qualified Data.Char    as C
 import qualified Prelude      as P
 import qualified GHC.TypeLits as TL
-import qualified Field                  as F
+import qualified Field        as F
 
 import Polynomial
 import System.Random(Random,randomRs,newStdGen)
@@ -43,7 +43,7 @@ nextPrime :: P.Int -> P.Int
 nextPrime n | isPrime n = n   -- don't need to compare to True here
             | P.otherwise = nextPrime (n P.+1)
 
-generateShare :: (F.FField a, F.Field a) => Vault a -> P.IO [Share a]
+generateShare :: F.FField a => Vault a -> P.IO [Share a]
 generateShare vault@(Vault threshold shares secret' fieldId) = do
                  -- convert char to a number
                  let secretInt   = P.map C.ord secret'
@@ -60,7 +60,7 @@ generateShare vault@(Vault threshold shares secret' fieldId) = do
 
                  P.return P.$ inShare points fieldId sSize
 
-decrypt :: (P.Monad m, F.Field a, F.FField a) => [Share a] -> m [P.Char]
+decrypt :: (P.Monad m, F.FField a) => [Share a] -> m [P.Char]
 decrypt shares = do
          -- size of the secret
          -- do a check to ensure they all have the same order

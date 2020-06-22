@@ -28,7 +28,7 @@ class Data.Eq.Eq a => Field a where
   (/)  :: a -> a -> a
   (*)  :: a -> a -> a
 
-class FField a where
+class Field a => FField a where
     fromInteger :: Int -> a
     toInteger   :: a   -> Int
     size        :: a   -> Int
