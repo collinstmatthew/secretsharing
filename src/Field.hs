@@ -4,12 +4,6 @@
 {-# LANGUAGE ScopedTypeVariables #-} -- when type signature is used inside a fn with a top level forall, we need this for scoping
 
 
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-
-
 module Field where
 
 import qualified Prelude as P
@@ -32,9 +26,6 @@ class Field a => FField a where
     fromInteger :: Int -> a
     toInteger   :: a   -> Int
     size        :: a   -> Int
-
-class FieldC m where
-    type Const m :: TL.Nat -> *
 
 --F.Modp :: ghc-prim-0.5.3:GHC.Types.Nat -> *
 --Hence Modp takes a type level Integer and gives back a concrete type

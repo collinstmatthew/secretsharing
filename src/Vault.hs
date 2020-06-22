@@ -30,7 +30,7 @@ data Share a = Share { info  :: [(P.Int,P.Int)],
 
 -- take list of values and puts them into a list of shares
 inShare :: [(P.Int, P.Int)] -> a -> P.Int -> [Share a]
-inShare lst order' nshares = P.map (\z -> Share { info = z, fieldId = order' }) (chunksOf nshares lst) where
+inShare lst order' nshares = P.map (\z -> Share { info = z, fieldId = order' }) (chunksOf nshares lst)
 
 randomlist :: Random a => a -> a -> P.IO [a]
 randomlist a b = randomRs (a, b) P.<$> newStdGen
@@ -47,7 +47,7 @@ generateShare :: F.FField a => Vault a -> P.IO [Share a]
 generateShare vault@(Vault threshold shares secret' fieldId) = do
                  -- convert char to a number
                  let secretInt   = P.map C.ord secret'
-                     secret      = P.map (fieldId F.*) P.$ P.map F.fromInteger secretInt
+                     secret      = P.map ((fieldId F.*) P.. F.fromInteger) secretInt
                      sSize       = P.length  secret'
 
                  randoml <- randomlist 1 (ffOrder vault)
@@ -64,7 +64,8 @@ decrypt :: (P.Monad m, F.FField a) => [Share a] -> m [P.Char]
 decrypt shares = do
          -- size of the secret
          -- do a check to ensure they all have the same order
-         let x  = P.map (F.fromInteger P.. P.fst) P.$ P.concat P.$ P.map info shares
-             y  = P.map ((fieldId (shares P.!!0)) F.*)  P.$ P.map (F.fromInteger P.. P.snd) P.$ P.concat P.$ P.map info shares
-             sSize = P.length P.$ info (shares P.!!0)
-         P.return P.$ P.map (\z -> (C.chr (F.toInteger (coeff z x y)))) [1..sSize]
+         let x  = P.map (F.fromInteger P.. P.fst) P.$ P.concatMap info shares
+             y  = P.map ((fieldId (P.head shares) F.*) P.. F.fromInteger P.. P.snd) (P.concatMap info shares)
+
+             sSize = P.length P.$ info (P.head shares)
+         P.return P.$ P.map (\z -> C.chr (F.toInteger (coeff z x y))) [1..sSize]

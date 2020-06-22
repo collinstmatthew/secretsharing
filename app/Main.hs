@@ -15,15 +15,10 @@ import Math
 import Data.Matrix as M
 import Prelude as P
 
---implement legrenge root finding of polynomial
---then allow a string of secret numbers as different coeffieints and not just s1
-
---somehow at the end let different types run on them
-
 main :: IO()
 main = do
-  --let mysecret = ['c'] :: [Char]
-  let v = Vault {threshold = 5, shares = 5, secret = "hey yah", fieldOne = F.one :: Modp 7919}
+  let mySecret = "Secret !? X"
+  let v = Vault {threshold = 5, shares = 5, secret = mySecret, fieldOne = F.one :: Modp 7919}
 
   --[s1,s2,s3] <- generateShare v
   s <- generateShare v
