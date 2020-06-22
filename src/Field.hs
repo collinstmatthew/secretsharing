@@ -3,6 +3,13 @@
 {-# LANGUAGE RankNTypes #-}          -- for forall
 {-# LANGUAGE ScopedTypeVariables #-} -- when type signature is used inside a fn with a top level forall, we need this for scoping
 
+
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
+
 module Field where
 
 import qualified Prelude as P
@@ -26,7 +33,16 @@ class FField a where
     toInteger   :: a   -> Int
     size        :: a   -> Int
 
+class FieldC m where
+    type Const m :: TL.Nat -> *
+
+--F.Modp :: ghc-prim-0.5.3:GHC.Types.Nat -> *
+--Hence Modp takes a type level Integer and gives back a concrete type
+--I need a kind class which says instances must have a type constructor of this
+--Form
 newtype Modp (n :: TL.Nat) = Modpt Int deriving (Show)
+
+
 
 instance forall n.(TL.KnownNat n) =>  Data.Eq.Eq (Modp n) where
   x == y = toInteger x  Data.Eq.== toInteger y

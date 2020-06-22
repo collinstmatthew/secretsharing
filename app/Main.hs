@@ -6,7 +6,7 @@
 
 module Main where
 
-import Field
+import Field as F
 import Polynomial
 import Vault
 
@@ -23,8 +23,7 @@ import Prelude as P
 main :: IO()
 main = do
   --let mysecret = ['c'] :: [Char]
-  let mysecret = "hey yah " :: [Char]
-  let v = Vault {threshold = 5, shares = 5, secret = mysecret}
+  let v = Vault {threshold = 5, shares = 5, secret = "hey yah", fieldOne = F.one :: Modp 7919}
 
   --[s1,s2,s3] <- generateShare v
   s <- generateShare v
