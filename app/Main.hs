@@ -1,9 +1,5 @@
 {-# LANGUAGE DataKinds #-}           -- for Nat (lifting integer to type)
 
---https://crypto.stackexchange.com/questions/8240/implementing-secret-reconstruction-in-shamirs-secret-sharing/8262#8262
-
---https://rkrishnan.org/posts/2017-06-20-typesafe-modulus-in-haskell.html
-
 module Main where
 
 import Field as F
@@ -23,7 +19,7 @@ main = do
   --[s1,s2,s3] <- generateShare v
   s <- generateShare v
   --result <- decrypt [s1,s2]
-  result <- decrypt s
+  let result = decrypt s
 
  -- print "results"
   print result

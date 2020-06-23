@@ -13,11 +13,9 @@ import qualified Field        as F
 import Polynomial
 import System.Random(Random,randomRs,newStdGen)
 import Data.List(nub)
-import Data.Numbers.Primes(isPrime)
 import Data.Proxy (Proxy(..))
 import Data.List.Split(chunksOf)
 
--- Currently have MyDoubleon the right hand side but should be a
 data Vault a = Vault { threshold :: P.Int,      -- Number of points needed for threshold
                        shares    :: P.Int,      -- Total number of shares that can be generated
                        secret    :: [P.Char],    -- The secret as a string
@@ -39,10 +37,6 @@ randomlist a b = randomRs (a, b) P.<$> newStdGen
 ffOrder :: F.FField a => Vault a -> P.Int
 ffOrder (Vault threshold shares secret' ffidlap) = F.size ffidlap
 
-nextPrime :: P.Int -> P.Int
-nextPrime n | isPrime n = n   -- don't need to compare to True here
-            | P.otherwise = nextPrime (n P.+1)
-
 generateShare :: F.FField a => Vault a -> P.IO [Share a]
 generateShare vault@(Vault threshold shares secret' fieldId) = do
                  -- convert char to a number
@@ -51,6 +45,7 @@ generateShare vault@(Vault threshold shares secret' fieldId) = do
                      sSize       = P.length  secret'
 
                  randoml <- randomlist 1 (ffOrder vault)
+
                  -- This vector can't have any duplicates otherwise the algorithm will fail
                  let randoml'   = P.map F.fromInteger randoml
                      xvals      = P.take (shares P.* sSize) (nub randoml')
@@ -60,12 +55,10 @@ generateShare vault@(Vault threshold shares secret' fieldId) = do
 
                  P.return P.$ inShare points fieldId sSize
 
-decrypt :: (P.Monad m, F.FField a) => [Share a] -> m [P.Char]
-decrypt shares = do
+decrypt :: (F.FField a) => [Share a] -> [P.Char]
+decrypt shares = P.map (\z -> C.chr (F.toInteger (coeff z x y))) [1..sSize] where
          -- size of the secret
          -- do a check to ensure they all have the same order
-         let x  = P.map (F.fromInteger P.. P.fst) P.$ P.concatMap info shares
-             y  = P.map ((fieldId (P.head shares) F.*) P.. F.fromInteger P.. P.snd) (P.concatMap info shares)
-
+             x     = P.map (F.fromInteger P.. P.fst) P.$ P.concatMap info shares
+             y     = P.map ((fieldId (P.head shares) F.*) P.. F.fromInteger P.. P.snd) (P.concatMap info shares)
              sSize = P.length P.$ info (P.head shares)
-         P.return P.$ P.map (\z -> C.chr (F.toInteger (coeff z x y))) [1..sSize]

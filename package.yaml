@@ -39,7 +39,6 @@ executables:
     - type-level
     - random
     - matrix
-    - primes
     - vector
 
 tests:
